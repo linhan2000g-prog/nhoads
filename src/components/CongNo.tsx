@@ -259,12 +259,12 @@ export default function CongNo() {
                         <div className="flex items-center justify-center gap-2">
                           {activeTab === 'phaithu' && (
                             <button 
-                              className="btn bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200" 
-                              style={{ padding: '0.4rem', fontSize: '0.9rem' }} 
+                              className="btn bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 font-medium" 
+                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} 
                               onClick={() => setEditDateModal({ isOpen: true, data: row, newDate: row.dueDate || '' })}
                               title="Chỉnh sửa hạn thu tiền"
                             >
-                              <CalendarDays size={18} />
+                              Gia Hạn
                             </button>
                           )}
                           <button className={activeTab === 'phaithu' ? "btn btn-income" : "btn btn-expense"} style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} onClick={() => handleOpenPayModal(row, activeTab === 'phaithu' ? 'thu' : 'tra')}>
