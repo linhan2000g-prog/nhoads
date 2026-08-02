@@ -294,13 +294,13 @@ export default function KhachHang() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tổng Giá trị</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all"
                     placeholder="0"
-                    value={customerForm.totalValue}
+                    value={customerForm.totalValue ? formatMoney(Number(customerForm.totalValue)) : ''}
                     onChange={(e) => {
-                      const total = e.target.value;
-                      const debt = Number(total) - Number(customerForm.paid);
+                      const total = e.target.value.replace(/\D/g, '');
+                      const debt = Number(total) - Number(customerForm.paid || 0);
                       setCustomerForm({...customerForm, totalValue: total, debt: String(debt)});
                     }}
                   />
@@ -308,13 +308,13 @@ export default function KhachHang() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Đã tạm ứng</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all"
                     placeholder="0"
-                    value={customerForm.paid}
+                    value={customerForm.paid ? formatMoney(Number(customerForm.paid)) : ''}
                     onChange={(e) => {
-                      const paid = e.target.value;
-                      const debt = Number(customerForm.totalValue) - Number(paid);
+                      const paid = e.target.value.replace(/\D/g, '');
+                      const debt = Number(customerForm.totalValue || 0) - Number(paid);
                       setCustomerForm({...customerForm, paid: paid, debt: String(debt)});
                     }}
                   />
@@ -322,10 +322,10 @@ export default function KhachHang() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Còn lại</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-red-600 font-bold"
                     placeholder="0"
-                    value={customerForm.debt}
+                    value={customerForm.debt ? formatMoney(Number(customerForm.debt)) : ''}
                     readOnly
                   />
                 </div>
