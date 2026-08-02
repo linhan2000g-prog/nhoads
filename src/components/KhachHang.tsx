@@ -16,7 +16,7 @@ export default function KhachHang() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerForm, setCustomerForm] = useState({ 
     id: '', name: '', phone: '', note: '', orders: '', 
-    totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '' 
+    totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '', dueDate: '' 
   });
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -68,7 +68,8 @@ export default function KhachHang() {
       paid: c.paid || '',
       debt: c.debt || '',
       acceptanceDate: c.acceptanceDate ? c.acceptanceDate.split('T')[0] : '',
-      address: c.address || ''
+      address: c.address || '',
+      dueDate: c.dueDate ? c.dueDate.split('T')[0] : ''
     });
     setErrorMsg('');
     setShowModal(true);
