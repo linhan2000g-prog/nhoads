@@ -833,6 +833,44 @@ function doPostInner(e, payload, ss) {
     }
 
     else if (module === 'congno') {
+      if (action === 'updateDueDate') {
+        const d = payload.data;
+        let targetSheet = ss.getSheetByName("Bán Hàng");
+        let dataArr = targetSheet.getDataRange().getValues();
+        let targetRow = -1;
+        let pName = "";
+        
+        for (let i = 1; i < dataArr.length; i++) {
+          if (dataArr[i][0] === d.id) {
+            targetRow = i + 1;
+            pName = dataArr[i][3]; // Tên Khách
+            targetSheet.getRange(targetRow, 11).setValue(d.newDueDate ? new Date(d.newDueDate) : "");
+            break;
+          }
+        }
+        
+        // Nếu không tìm thấy trong Bán Hàng, tìm trong Khách Hàng
+        if (targetRow === -1) {
+          targetSheet = ss.getSheetByName("Khách Hàng");
+          dataArr = targetSheet.getDataRange().getValues();
+          for (let i = 1; i < dataArr.length; i++) {
+            if (dataArr[i][0] === d.id) {
+              targetRow = i + 1;
+              pName = dataArr[i][2]; // Tên Khách
+              targetSheet.getRange(targetRow, 11).setValue(d.newDueDate ? new Date(d.newDueDate) : "");
+              break;
+            }
+          }
+        }
+        
+        if (targetRow !== -1) {
+          logAudit(ss, user, "Sửa Hạn Thu", "Công Nợ", `Đổi ngày thu nợ khách: ${pName} thành ${d.newDueDate || "Trống"}`);
+          triggerFirebaseSync(ss, ['congno']);
+          return responseJson({ success: true });
+        }
+        return responseJson({ error: 'Không tìm thấy khoản nợ' }, 404);
+      }
+
       if (action === 'pay_debt') {
         const d = payload.data;
         const type = d.type; // 'thu' or 'tra'

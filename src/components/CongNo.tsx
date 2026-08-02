@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, RefreshCw, Search, FileBarChart } from 'lucide-react';
+import { CheckCircle, RefreshCw, Search, FileBarChart, CalendarDays } from 'lucide-react';
 import { formatMoney } from '../utils';
 import { fetchData, postData } from '../api';
 import ReportModal from './ReportModal';
@@ -20,6 +20,9 @@ export default function CongNo() {
   const [filterSearch, setFilterSearch] = useState('');
   const [filterFromDate, setFilterFromDate] = useState('');
   const [filterToDate, setFilterToDate] = useState('');
+
+  // Edit Date Modal
+  const [editDateModal, setEditDateModal] = useState<{isOpen: boolean, data: any, newDate: string}>({ isOpen: false, data: null, newDate: '' });
 
   // Report Modal
   const [showReport, setShowReport] = useState(false);
@@ -49,18 +52,39 @@ export default function CongNo() {
     setPayNote(type === 'thu' ? `Thu nợ khách ${data.name}` : `Trả nợ NCC ${data.name}`);
   };
 
-  const handleSubmitPay = async (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await postData('congno', 'pay_debt', { 
-        data: { id: payModal.data.id, amount: payAmount, type: payModal.type, note: payNote, date: new Date().toISOString() }
+      await postData('congno', 'pay_debt', {
+        id: payModal.data.id,
+        type: payModal.type,
+        amount: Number(payAmount),
+        note: payNote
       });
-      alert(payModal.type === 'thu' ? "Thu nợ thành công!" : "Trả nợ thành công!");
       setPayModal({ isOpen: false, data: null, type: 'thu' });
       await loadData();
-    } catch (err: any) {
-      alert("Lỗi: " + err.message);
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi thanh toán!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateDueDate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await postData('congno', 'updateDueDate', {
+        id: editDateModal.data.id,
+        newDueDate: editDateModal.newDate
+      });
+      setEditDateModal({ isOpen: false, data: null, newDate: '' });
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi cập nhật ngày!");
     } finally {
       setLoading(false);
     }
@@ -227,9 +251,21 @@ export default function CongNo() {
                         </td>
                       )}
                       <td className="text-center">
-                        <button className={activeTab === 'phaithu' ? "btn btn-income" : "btn btn-expense"} style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} onClick={() => handleOpenPayModal(row, activeTab === 'phaithu' ? 'thu' : 'tra')}>
-                          {activeTab === 'phaithu' ? 'Thu Nợ' : 'Trả Nợ'}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {activeTab === 'phaithu' && (
+                            <button 
+                              className="btn bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200" 
+                              style={{ padding: '0.4rem', fontSize: '0.9rem' }} 
+                              onClick={() => setEditDateModal({ isOpen: true, data: row, newDate: row.dueDate || '' })}
+                              title="Chỉnh sửa hạn thu tiền"
+                            >
+                              <CalendarDays size={18} />
+                            </button>
+                          )}
+                          <button className={activeTab === 'phaithu' ? "btn btn-income" : "btn btn-expense"} style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }} onClick={() => handleOpenPayModal(row, activeTab === 'phaithu' ? 'thu' : 'tra')}>
+                            {activeTab === 'phaithu' ? 'Thu Nợ' : 'Trả Nợ'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -248,7 +284,7 @@ export default function CongNo() {
               <h2 className="card-title">{payModal.type === 'thu' ? 'Ghi nhận Thu Nợ' : 'Ghi nhận Trả Nợ'}</h2>
             </div>
             <div className="form-body">
-              <form onSubmit={handleSubmitPay}>
+              <form onSubmit={handlePay}>
                 <div style={{ marginBottom: '1rem' }}>
                   <strong>Đối tác:</strong> {payModal.data.name}
                 </div>
@@ -271,6 +307,41 @@ export default function CongNo() {
                   </button>
                   <button type="submit" className={payModal.type === 'thu' ? "btn btn-income" : "btn btn-expense"} style={{ flex: 1 }} disabled={loading}>
                     {loading ? <RefreshCw size={18} className="spinning" /> : <CheckCircle size={18} />} Xác nhận
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cập nhật ngày */}
+      {editDateModal.isOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
+            <div className="card-header">
+              <h2 className="card-title">Chỉnh sửa Hạn thu tiền</h2>
+            </div>
+            <div className="form-body">
+              <form onSubmit={handleUpdateDueDate}>
+                <div className="form-group">
+                  <label>Khách hàng</label>
+                  <input type="text" className="form-control" value={editDateModal.data?.name || ''} disabled />
+                </div>
+                <div className="form-group">
+                  <label>Hạn thu tiền mới</label>
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    value={editDateModal.newDate} 
+                    onChange={e => setEditDateModal({...editDateModal, newDate: e.target.value})} 
+                  />
+                  <small style={{ color: '#666', marginTop: '4px', display: 'block' }}>Để trống nếu muốn xóa hạn thu tiền.</small>
+                </div>
+                <div className="flex gap-2 justify-end" style={{ marginTop: '1.5rem' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setEditDateModal({ isOpen: false, data: null, newDate: '' })}>Hủy</button>
+                  <button type="submit" className="btn btn-primary" disabled={loading}>
+                    {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </button>
                 </div>
               </form>
