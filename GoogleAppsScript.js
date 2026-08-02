@@ -508,6 +508,7 @@ function doPostInner(e, payload, ss) {
         } catch(e) {}
         // ----------------------------------------
 
+        triggerFirebaseSync(ss, ['khachhang', 'congno']);
         return responseJson({ success: true, id: newId });
       } else if (action === 'edit' || action === 'update') {
         const d = payload.data || payload;
@@ -541,14 +542,16 @@ function doPostInner(e, payload, ss) {
           } catch(e) {}
           // ----------------------------------------
 
+          triggerFirebaseSync(ss, ['khachhang', 'congno']);
           return responseJson({ success: true });
         }
         return responseJson({ error: 'Không tìm thấy khách hàng' }, 404);
       } else if (action === 'delete') {
-        const row = getRowById(sheet, payload.id);
         if (row) {
           logAudit(ss, user, "Xóa", "Khách Hàng", `Xóa khách hàng ID: ${payload.id}`);
-          return deleteRowById(sheet, payload.id);
+          const res = deleteRowById(sheet, payload.id);
+          triggerFirebaseSync(ss, ['khachhang', 'congno']);
+          return res;
         }
         return responseJson({ error: 'Không tìm thấy khách hàng để xóa' }, 404);
       }
