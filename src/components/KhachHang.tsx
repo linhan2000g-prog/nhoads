@@ -50,7 +50,7 @@ export default function KhachHang() {
     setIsEditMode(false);
     setCustomerForm({ 
       id: '', name: '', phone: '', note: '', orders: '', 
-      totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '' 
+      totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '', dueDate: '' 
     });
     setErrorMsg('');
     setShowModal(true);
