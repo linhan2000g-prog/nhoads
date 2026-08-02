@@ -22,6 +22,8 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: (user: any) 
       const res = await postData('auth', 'login', { username, password });
       if (res.success && res.user) {
         localStorage.setItem('erp_user', JSON.stringify(res.user));
+        if (res.app_secret) localStorage.setItem('app_secret', res.app_secret);
+        if (res.firebase_secret) localStorage.setItem('firebase_secret', res.firebase_secret);
         onLoginSuccess(res.user);
       } else {
         setError(res.error || 'Sai tài khoản hoặc mật khẩu');

@@ -6,7 +6,9 @@ export async function fetchData(module: string, params: Record<string, string | 
     // 1. Try to fetch from Firebase for blazing fast reads
     if (module !== 'auth' && module !== 'dashboard') {
       try {
-        const fbRes = await fetch(`${FIREBASE_URL}${module}.json`);
+        const firebaseSecret = localStorage.getItem('firebase_secret');
+        const authParam = firebaseSecret ? `?auth=${firebaseSecret}` : '';
+        const fbRes = await fetch(`${FIREBASE_URL}${module}.json${authParam}`);
         if (fbRes.ok) {
           const fbData = await fbRes.json();
           let returnData = null;
@@ -82,6 +84,7 @@ export async function postData(module: string, action: string, data: Record<stri
       module,
       action,
       user: username,
+      secret: localStorage.getItem('app_secret') || '',
       ...data
     };
 

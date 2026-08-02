@@ -19,6 +19,10 @@ const HEADERS_LICHSUKHO = ['ID', 'Mã SP', 'Tên Sản Phẩm', 'Ngày', 'Loại
 const HEADERS_TAIKHOAN = ['ID', 'Tài khoản', 'Mật khẩu', 'Quyền', 'Họ Tên'];
 const HEADERS_NHATKY = ['ID', 'Thời gian', 'Nhân viên', 'Hành động', 'Mô-đun', 'Chi tiết'];
 
+// --- SECRETS ---
+const APP_SECRET = 'Luludecor@2026';
+const FIREBASE_SECRET = 'BQMSoPIKcya7TYxELNcicZ4LQeWC3KHSBH6SkUG6';
+
 function setupInitialSheets() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
@@ -309,6 +313,9 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
+    if (payload.module !== 'auth' && payload.secret !== APP_SECRET) {
+      return ContentService.createTextOutput(JSON.stringify({ error: 'Unauthorized: Invalid secret key' })).setMimeType(ContentService.MimeType.JSON);
+    }
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const out = doPostInner(e, payload, ss);
     const resString = out.getContent();
@@ -351,7 +358,12 @@ function doPostInner(e, payload, ss) {
         if (String(tkData[i][1]).trim() === String(payload.username).trim() && String(tkData[i][2]).trim() === String(payload.password).trim()) {
           let perms = [];
           try { perms = JSON.parse(tkData[i][5] || "[]"); } catch(e) {}
-          return responseJson({ success: true, user: { id: tkData[i][0], username: tkData[i][1], role: tkData[i][3], fullName: tkData[i][4], permissions: perms } });
+          return responseJson({ 
+            success: true, 
+            user: { id: tkData[i][0], username: tkData[i][1], role: tkData[i][3], fullName: tkData[i][4], permissions: perms },
+            app_secret: APP_SECRET,
+            firebase_secret: FIREBASE_SECRET
+          });
         }
       }
       return responseJson({ success: false, error: 'Sai tài khoản hoặc mật khẩu' }, 401);

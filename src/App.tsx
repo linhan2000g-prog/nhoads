@@ -45,6 +45,8 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('erp_user');
+    localStorage.removeItem('app_secret');
+    localStorage.removeItem('firebase_secret');
     setUser(null);
   };
 
