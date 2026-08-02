@@ -182,9 +182,9 @@ export default function KhachHang() {
                     <td className="px-6 py-4">{c.phone}</td>
                     <td className="px-6 py-4 max-w-[200px] truncate" title={c.address}>{c.address || '-'}</td>
                     <td className="px-6 py-4 max-w-[250px] truncate" title={c.orders}>{c.orders || '-'}</td>
-                    <td className="px-6 py-4 text-right font-medium text-slate-800">{formatMoney((Number(c.paid) || 0) + (Number(c.debt) || 0))}</td>
-                    <td className="px-6 py-4 text-right font-medium text-green-600">{formatMoney(c.paid || 0)}</td>
-                    <td className="px-6 py-4 text-right font-medium text-red-600">{formatMoney(c.debt || 0)}</td>
+                    <td className="px-6 py-4 text-right font-medium text-slate-800">{formatMoney((Number(c.paid) || 0) + (Number(c.bhPaid) || 0) + (Number(c.debt) || 0) + (Number(c.bhDebt) || 0))}</td>
+                    <td className="px-6 py-4 text-right font-medium text-green-600">{formatMoney((Number(c.paid) || 0) + (Number(c.bhPaid) || 0))}</td>
+                    <td className="px-6 py-4 text-right font-medium text-red-600">{formatMoney((Number(c.debt) || 0) + (Number(c.bhDebt) || 0))}</td>
                     <td className="px-6 py-4">{c.acceptanceDate ? new Date(c.acceptanceDate).toLocaleDateString('vi-VN') : '-'}</td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center justify-center bg-slate-100 text-slate-700 w-8 h-8 rounded-full font-medium">

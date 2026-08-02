@@ -70,6 +70,27 @@ function deleteRowById(sheet, id) {
   return responseJson({ error: 'Không tìm thấy ID để xóa' }, 404);
 }
 
+function recordThuChi(ss, type, date, amount, content, person, user) {
+  try {
+    amount = Number(amount);
+    if (!amount || amount <= 0) return;
+    const sheetTC = ss.getSheetByName("Thu Chi");
+    if (!sheetTC) return;
+    
+    const newId = generateId();
+    const dDate = date ? new Date(date) : new Date();
+    
+    let contentThu = type === 'thu' ? content : "";
+    let amountThu = type === 'thu' ? amount : "";
+    let contentChi = type === 'chi' ? content : "";
+    let amountChi = type === 'chi' ? amount : "";
+    
+    // ID, Ngày, Nội dung Thu, Số tiền Thu, Nội dung Chi, Số tiền Chi, Người nộp/nhận, Người lập
+    sheetTC.appendRow([newId, dDate, contentThu, amountThu, contentChi, amountChi, person || "", user || "Hệ thống"]);
+  } catch(e) {}
+}
+
+
 function doGet(e) {
   try {
     const module = e.parameter.module || 'thuchi';
@@ -188,13 +209,10 @@ function doGet(e) {
         let stat = stats[phone] || { spent: 0, debt: 0, count: 0 };
         
         data.push({ 
-          id: row[0], 
-          phone: phone, 
-          name: row[2] || "", 
-          purchaseCount: stat.count, // Sử dụng count thực tế từ số hóa đơn
-          totalSpent: stat.spent,
-          debt: stat.debt,
-          note: row[4] || "" 
+          id: row[0], phone: phone, name: row[2] || "", 
+          purchaseCount: stat.count, totalSpent: stat.spent, debt: row[7] || 0, note: row[4] || "",
+          orders: row[5] || "", paid: row[6] || 0, acceptanceDate: row[8] || "", address: row[9] || "",
+          bhPaid: stat.spent - stat.debt, bhDebt: stat.debt
         });
       }
       return responseJson({ data: data });
@@ -236,7 +254,25 @@ function doGet(e) {
         if (debt > 0) {
           phaithu.push({
             id: row[0], date: row[1] instanceof Date ? row[1].toISOString().split('T')[0] : row[1],
-            phone: row[2], name: row[3], total: row[5], debt: debt
+            phone: row[2], name: row[3], total: row[5], debt: debt,
+            dueDate: row[10] instanceof Date ? row[10].toISOString().split('T')[0] : row[10],
+            note: row[8] || ""
+          });
+        }
+      }
+
+      const khSheet = ss.getSheetByName("Khách Hàng");
+      const khValues = khSheet.getDataRange().getValues();
+      for (let i = 1; i < khValues.length; i++) {
+        let row = khValues[i];
+        if (!row[0]) continue;
+        let debt = Number(row[7]) || 0;
+        if (debt > 0) {
+          phaithu.push({
+            id: row[0], date: row[8] instanceof Date ? row[8].toISOString().split('T')[0] : row[8],
+            phone: row[1], name: row[2], total: (Number(row[6])||0) + debt, debt: debt,
+            dueDate: row[10] instanceof Date ? row[10].toISOString().split('T')[0] : row[10],
+            note: row[4] || ""
           });
         }
       }
@@ -514,7 +550,10 @@ function doPostInner(e, payload, ss) {
         } catch(e) {}
         // ----------------------------------------
 
-        triggerFirebaseSync(ss, ['khachhang', 'congno']);
+        if (Number(d.paid) > 0) {
+          recordThuChi(ss, 'thu', d.acceptanceDate || new Date(), d.paid, 'Tạm ứng khi thêm khách hàng: ' + d.name, d.name, user);
+        }
+        triggerFirebaseSync(ss, ['khachhang', 'congno', 'thuchi']);
         return responseJson({ success: true, id: newId });
       } else if (action === 'edit' || action === 'update') {
         const d = payload.data || payload;
@@ -553,7 +592,8 @@ function doPostInner(e, payload, ss) {
         }
         return responseJson({ error: 'Không tìm thấy khách hàng' }, 404);
       } else if (action === 'delete') {
-        if (row) {
+        const match = getRowById(sheet, payload.id);
+        if (match) {
           logAudit(ss, user, "Xóa", "Khách Hàng", `Xóa khách hàng ID: ${payload.id}`);
           const res = deleteRowById(sheet, payload.id);
           triggerFirebaseSync(ss, ['khachhang', 'congno']);
@@ -622,6 +662,9 @@ function doPostInner(e, payload, ss) {
           sendTelegramMessage(msg);
         } catch(e) {}
         // ----------------------------------------
+        if (Number(d.paidAmount) > 0) {
+          recordThuChi(ss, 'thu', d.date, d.paidAmount, 'Thanh toán đơn hàng cho KH: ' + d.customerName, d.customerName, user);
+        }
         
         return responseJson({ success: true, id: newId });
       }
@@ -797,6 +840,9 @@ function doPostInner(e, payload, ss) {
           sendTelegramMessage(msg);
         } catch(e) {}
         // ----------------------------------------
+        if (Number(d.paidAmount) > 0) {
+          recordThuChi(ss, 'chi', d.date, d.paidAmount, 'Thanh toán nhập kho cho NCC: ' + d.supplier, d.supplier, user);
+        }
         
         return responseJson({ success: true, id: newId });
       }
@@ -883,8 +929,8 @@ function doPostInner(e, payload, ss) {
       if (action === 'pay_debt') {
         const d = payload.data;
         const type = d.type; // 'thu' or 'tra'
-        const targetSheet = ss.getSheetByName(type === 'thu' ? "Bán Hàng" : "Nhập Kho");
-        const dataArr = targetSheet.getDataRange().getValues();
+        let targetSheet = ss.getSheetByName(type === 'thu' ? "Bán Hàng" : "Nhập Kho");
+        let dataArr = targetSheet.getDataRange().getValues();
         let targetRow = -1;
         let pName = "";
 
@@ -931,15 +977,12 @@ function doPostInner(e, payload, ss) {
 
         if (targetRow === -1) return responseJson({ error: 'Không tìm thấy đơn hàng' }, 404);
 
-        const sheetThuChi = ss.getSheetByName("Thu Chi");
-        if (sheetThuChi) {
-          if (type === 'thu') {
-            sheetThuChi.appendRow([generateId(), new Date(d.date), "", "", `Thu nợ KH: ${pName} - ${d.note}`, Number(d.amount), "", user]);
-            logAudit(ss, user, "Thu Nợ", "Công Nợ", `Thu nợ KH ${pName}: ${d.amount}`);
-          } else {
-             sheetThuChi.appendRow([generateId(), new Date(d.date), `Trả nợ NCC: ${pName} - ${d.note}`, Number(d.amount), "", "", "", user]);
-             logAudit(ss, user, "Trả Nợ", "Công Nợ", `Trả nợ NCC ${pName}: ${d.amount}`);
-          }
+        if (type === 'thu') {
+          recordThuChi(ss, 'thu', d.date, d.amount, `Thu nợ KH: ${pName} - ${d.note}`, pName, user);
+          logAudit(ss, user, "Thu Nợ", "Công Nợ", `Thu nợ KH ${pName}: ${d.amount}`);
+        } else {
+          recordThuChi(ss, 'chi', d.date, d.amount, `Trả nợ NCC: ${pName} - ${d.note}`, pName, user);
+          logAudit(ss, user, "Trả Nợ", "Công Nợ", `Trả nợ NCC ${pName}: ${d.amount}`);
         }
         return responseJson({ success: true });
       }
@@ -1060,6 +1103,7 @@ const FIREBASE_URL = 'https://appnguyenhoads-default-rtdb.asia-southeast1.fireba
 
 function triggerFirebaseSync(ss, modules) {
   try {
+    SpreadsheetApp.flush();
     const requests = [];
     modules.forEach(module => {
       let result = {};
@@ -1147,7 +1191,8 @@ function triggerFirebaseSync(ss, modules) {
           data.push({ 
             id: row[0], phone: phone, name: row[2] || "", 
             purchaseCount: stat.count, totalSpent: stat.spent, debt: row[7] || 0, note: row[4] || "",
-            orders: row[5] || "", paid: row[6] || 0, acceptanceDate: row[8] || "", address: row[9] || ""
+            orders: row[5] || "", paid: row[6] || 0, acceptanceDate: row[8] || "", address: row[9] || "",
+            bhPaid: stat.spent - stat.debt, bhDebt: stat.debt
           });
         }
         result = { data: data };
