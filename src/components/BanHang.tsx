@@ -57,6 +57,7 @@ export default function BanHang() {
   const [customerName, setCustomerName] = useState<string>('');
   const [items, setItems] = useState<SaleItem[]>([{ productId: '', code: '', name: '', qty: 1, price: 0, importPrice: 0 }]);
   const [paidAmount, setPaidAmount] = useState<string>('');
+  const [isPaidInFull, setIsPaidInFull] = useState<boolean>(false);
   const [note, setNote] = useState<string>('');
   const [dueDate, setDueDate] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -129,6 +130,12 @@ export default function BanHang() {
   const currentTotalAmount = items.reduce((sum, item) => sum + (item.qty * item.price), 0);
   const currentDebt = currentTotalAmount - (Number(paidAmount) || 0);
 
+  useEffect(() => {
+    if (isPaidInFull) {
+      setPaidAmount(currentTotalAmount.toString());
+    }
+  }, [isPaidInFull, currentTotalAmount]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || !customerName || items.some(i => (!i.productId && !i.name && !i.searchVal) || i.qty <= 0)) {
@@ -178,6 +185,7 @@ export default function BanHang() {
     }));
     setItems(loadedItems.length > 0 ? loadedItems : [{ productId: '', code: '', name: '', searchVal: '', qty: 1, price: 0, importPrice: 0 }]);
     setPaidAmount(record.paidAmount.toString());
+    setIsPaidInFull(record.paidAmount >= record.totalAmount && record.totalAmount > 0);
     setNote(record.note || '');
     setDueDate(record.dueDate ? record.dueDate.split('T')[0] : '');
   };
@@ -189,6 +197,7 @@ export default function BanHang() {
     setCustomerName('');
     setItems([{ productId: '', code: '', name: '', searchVal: '', qty: 1, price: 0, importPrice: 0 }]);
     setPaidAmount('');
+    setIsPaidInFull(false);
     setNote('');
     setDueDate('');
   };
@@ -360,10 +369,24 @@ export default function BanHang() {
 
       <div style={{ display: 'flex', gap: '1rem' }}>
         <div className="form-group" style={{ flex: 1 }}>
-          <label className="form-label">Khách thanh toán (đ)</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="form-label">Khách thanh toán (đ)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>
+              <input 
+                type="checkbox" 
+                checked={isPaidInFull} 
+                onChange={(e) => setIsPaidInFull(e.target.checked)} 
+              />
+              Đã thanh toán hết
+            </label>
+          </div>
           <input 
             type="number" className="form-control" min="0" step="1000"
-            value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)}
+            value={paidAmount} onChange={(e) => {
+              setPaidAmount(e.target.value);
+              if (isPaidInFull) setIsPaidInFull(false);
+            }}
+            disabled={isPaidInFull}
           />
         </div>
         <div className="form-group" style={{ flex: 1 }}>
