@@ -284,6 +284,12 @@ function doPost(e) {
         let modulesToSync = [module];
         if (module === 'banhang') modulesToSync = ['banhang', 'khachhang', 'khohang', 'congno'];
         if (module === 'nhapkho') modulesToSync = ['nhapkho', 'khohang', 'congno'];
+        if (module === 'khachhang') modulesToSync = ['khachhang', 'congno'];
+        if (module === 'congno') modulesToSync = ['congno', 'thuchi', 'banhang', 'nhapkho', 'khachhang'];
+        if (module === 'thuchi') modulesToSync = ['thuchi'];
+        
+        // Remove duplicates just in case
+        modulesToSync = [...new Set(modulesToSync)];
         triggerFirebaseSync(ss, modulesToSync);
       }
     } catch(err) {
