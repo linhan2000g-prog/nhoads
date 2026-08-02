@@ -11,12 +11,25 @@ export async function fetchData(module: string, params: Record<string, string | 
         const fbRes = await fetch(`${FIREBASE_URL}${module}.json${authParam}`);
         if (fbRes.ok) {
           const fbData = await fbRes.json();
+          
+          if (fbData === null) {
+            return { data: [] };
+          }
+          
           let returnData = null;
           
-          if (fbData && fbData.data) {
+          if (fbData.data) {
             returnData = fbData;
-          } else if (fbData && (fbData.products || fbData.phaithu)) {
+          } else if (fbData.products || fbData.phaithu) {
             returnData = fbData;
+          } else if (Array.isArray(fbData)) {
+            returnData = { data: fbData };
+          } else if (fbData.error) {
+            // Ignore error payload accidentally synced
+            return { data: [] };
+          } else {
+            // Empty object or other format
+            return { data: [] };
           }
 
           if (returnData) {
