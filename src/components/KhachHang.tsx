@@ -14,7 +14,10 @@ export default function KhachHang() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customerForm, setCustomerForm] = useState({ id: '', name: '', phone: '', address: '', note: '', orders: '', paid: '', debt: '', acceptanceDate: '', dueDate: '' });
+  const [customerForm, setCustomerForm] = useState({ 
+    id: '', name: '', phone: '', note: '', orders: '', 
+    totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '' 
+  });
   const [errorMsg, setErrorMsg] = useState('');
   
   // Report Modal
@@ -45,24 +48,27 @@ export default function KhachHang() {
 
   const handleOpenAddModal = () => {
     setIsEditMode(false);
-    setCustomerForm({ id: '', name: '', phone: '', address: '', note: '', orders: '', paid: '', debt: '', acceptanceDate: '', dueDate: '' });
+    setCustomerForm({ 
+      id: '', name: '', phone: '', note: '', orders: '', 
+      totalValue: '', paid: '', debt: '', acceptanceDate: '', address: '' 
+    });
     setErrorMsg('');
     setShowModal(true);
   };
 
   const handleOpenEditModal = (c: any) => {
     setIsEditMode(true);
-    setCustomerForm({ 
-      id: c.id, 
-      name: c.name, 
-      phone: c.phone,
-      address: c.address || '',
+    setCustomerForm({
+      id: c.id,
+      name: c.name || '',
+      phone: c.phone || '',
       note: c.note || '',
       orders: c.orders || '',
+      totalValue: String((Number(c.paid) || 0) + (Number(c.debt) || 0)),
       paid: c.paid || '',
       debt: c.debt || '',
       acceptanceDate: c.acceptanceDate ? c.acceptanceDate.split('T')[0] : '',
-      dueDate: c.dueDate ? c.dueDate.split('T')[0] : ''
+      address: c.address || ''
     });
     setErrorMsg('');
     setShowModal(true);
@@ -154,8 +160,9 @@ export default function KhachHang() {
                 <th className="px-6 py-4">Số điện thoại</th>
                 <th className="px-6 py-4">Địa chỉ</th>
                 <th className="px-6 py-4">Đơn đặt hàng</th>
-                <th className="px-6 py-4 text-right">Thanh toán</th>
-                <th className="px-6 py-4 text-right">Còn nợ</th>
+                <th className="px-6 py-4 text-right">Tổng giá trị</th>
+                <th className="px-6 py-4 text-right">Đã tạm ứng</th>
+                <th className="px-6 py-4 text-right">Còn lại</th>
                 <th className="px-6 py-4">Ngày nghiệm thu</th>
                 <th className="px-6 py-4 text-center">Số lần mua</th>
                 <th className="px-6 py-4">Ghi chú</th>
@@ -164,9 +171,9 @@ export default function KhachHang() {
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading && customers.length === 0 ? (
-                <tr><td colSpan={9} className="px-6 py-8 text-center text-slate-500">Đang tải dữ liệu...</td></tr>
+                <tr><td colSpan={11} className="px-6 py-8 text-center text-slate-500">Đang tải dữ liệu...</td></tr>
               ) : filteredCustomers.length === 0 ? (
-                <tr><td colSpan={9} className="px-6 py-8 text-center text-slate-500">Không tìm thấy khách hàng nào.</td></tr>
+                <tr><td colSpan={11} className="px-6 py-8 text-center text-slate-500">Không tìm thấy khách hàng nào.</td></tr>
               ) : (
                 filteredCustomers.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
@@ -174,6 +181,7 @@ export default function KhachHang() {
                     <td className="px-6 py-4">{c.phone}</td>
                     <td className="px-6 py-4 max-w-[200px] truncate" title={c.address}>{c.address || '-'}</td>
                     <td className="px-6 py-4 max-w-[250px] truncate" title={c.orders}>{c.orders || '-'}</td>
+                    <td className="px-6 py-4 text-right font-medium text-slate-800">{formatMoney((Number(c.paid) || 0) + (Number(c.debt) || 0))}</td>
                     <td className="px-6 py-4 text-right font-medium text-green-600">{formatMoney(c.paid || 0)}</td>
                     <td className="px-6 py-4 text-right font-medium text-red-600">{formatMoney(c.debt || 0)}</td>
                     <td className="px-6 py-4">{c.acceptanceDate ? new Date(c.acceptanceDate).toLocaleDateString('vi-VN') : '-'}</td>
@@ -281,25 +289,43 @@ export default function KhachHang() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Thanh toán</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tổng Giá trị</label>
+                  <input 
+                    type="number" 
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all"
+                    placeholder="0"
+                    value={customerForm.totalValue}
+                    onChange={(e) => {
+                      const total = e.target.value;
+                      const debt = Number(total) - Number(customerForm.paid);
+                      setCustomerForm({...customerForm, totalValue: total, debt: String(debt)});
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Đã tạm ứng</label>
                   <input 
                     type="number" 
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all"
                     placeholder="0"
                     value={customerForm.paid}
-                    onChange={(e) => setCustomerForm({...customerForm, paid: e.target.value})}
+                    onChange={(e) => {
+                      const paid = e.target.value;
+                      const debt = Number(customerForm.totalValue) - Number(paid);
+                      setCustomerForm({...customerForm, paid: paid, debt: String(debt)});
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Còn nợ</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Còn lại</label>
                   <input 
                     type="number" 
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500 transition-all"
+                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-lg text-red-600 font-bold"
                     placeholder="0"
                     value={customerForm.debt}
-                    onChange={(e) => setCustomerForm({...customerForm, debt: e.target.value})}
+                    readOnly
                   />
                 </div>
               </div>
@@ -371,18 +397,22 @@ export default function KhachHang() {
           { header: 'Số điện thoại', key: 'phone', render: (row) => row.phone || '-' },
           { header: 'Địa chỉ', key: 'address', render: (row) => row.address || '-' },
           { header: 'Đơn đặt hàng', key: 'orders', render: (row) => row.orders || '-' },
-          { header: 'Thanh toán', exportValue: (row) => row.paid, render: (row) => <span className="text-green-600 font-medium">{formatMoney(row.paid || 0)}</span>, align: 'right' },
-          { header: 'Còn nợ', exportValue: (row) => row.debt, render: (row) => <span className="text-red-600 font-bold">{formatMoney(row.debt || 0)}</span>, align: 'right' },
+          { header: 'Tổng Giá trị', exportValue: (row) => (Number(row.paid) || 0) + (Number(row.debt) || 0), render: (row) => <span className="font-medium text-slate-800">{formatMoney((Number(row.paid) || 0) + (Number(row.debt) || 0))}</span>, align: 'right' },
+          { header: 'Đã tạm ứng', exportValue: (row) => row.paid, render: (row) => <span className="text-green-600 font-medium">{formatMoney(row.paid || 0)}</span>, align: 'right' },
+          { header: 'Còn lại', exportValue: (row) => row.debt, render: (row) => <span className="text-red-600 font-bold">{formatMoney(row.debt || 0)}</span>, align: 'right' },
           { header: 'Ngày nghiệm thu', key: 'acceptanceDate', render: (row) => row.acceptanceDate ? format(new Date(row.acceptanceDate), 'dd/MM/yyyy') : '-' },
           { header: 'Ghi chú', key: 'note', render: (row) => row.note || '-' }
         ]}
         totals={(filteredData) => {
+          const tTotal = filteredData.reduce((sum, item) => sum + ((Number(item.paid) || 0) + (Number(item.debt) || 0)), 0);
           const tPaid = filteredData.reduce((sum, item) => sum + (Number(item.paid) || 0), 0);
           const tDebt = filteredData.reduce((sum, item) => sum + (Number(item.debt) || 0), 0);
           return (
             <tr>
-              <td colSpan={5} className="px-6 py-4 text-right text-green-700">Tổng Thanh Toán: {formatMoney(tPaid)}</td>
-              <td className="px-6 py-4 text-right text-red-700">Tổng Nợ: {formatMoney(tDebt)}</td>
+              <td colSpan={4} className="px-6 py-4 text-right font-bold text-slate-800">TỔNG CỘNG:</td>
+              <td className="px-6 py-4 text-right font-bold text-slate-800">{formatMoney(tTotal)}</td>
+              <td className="px-6 py-4 text-right text-green-700">{formatMoney(tPaid)}</td>
+              <td className="px-6 py-4 text-right text-red-700">{formatMoney(tDebt)}</td>
               <td colSpan={2}></td>
             </tr>
           );
