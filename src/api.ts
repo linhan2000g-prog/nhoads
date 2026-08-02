@@ -88,19 +88,95 @@ export async function postData(module: string, action: string, data: Record<stri
       ...data
     };
 
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    // 1. OPTIMISTIC FIREBASE UPDATE for instant UI feedback
+    if (module !== 'auth' && module !== 'dashboard' && (action === 'add' || action === 'update' || action === 'delete')) {
+      try {
+        const firebaseSecret = localStorage.getItem('firebase_secret');
+        const authParam = firebaseSecret ? `?auth=${firebaseSecret}` : '';
+        const fbRes = await fetch(`${FIREBASE_URL}${module}.json${authParam}`);
+        
+        if (fbRes.ok) {
+          let currentData = await fbRes.json() || {};
+          
+          let dataArray = [];
+          const mainKey = currentData.data ? 'data' : (currentData.products ? 'products' : (currentData.phaithu ? 'phaithu' : null));
+          
+          if (mainKey) {
+              dataArray = currentData[mainKey] || [];
+              if (!Array.isArray(dataArray)) dataArray = Object.values(dataArray);
+              dataArray = dataArray.filter((item: any) => item !== null);
+          } else if (Array.isArray(currentData)) {
+              dataArray = currentData;
+              currentData = { data: currentData };
+          } else {
+              currentData = { data: [] };
+          }
+          
+          // Generate an optimistic ID for new items
+          const tempId = data.id || `temp_${Date.now()}`;
+          const itemData = data.data as any || {};
+          
+          if (action === 'add') {
+            const newItem = { id: tempId, ...itemData };
+            dataArray.push(newItem);
+          } else if (action === 'update') {
+            const idToUpdate = data.id || itemData.id;
+            const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
+            if (index !== -1) {
+              dataArray[index] = { ...dataArray[index], ...itemData };
+            }
+          } else if (action === 'delete') {
+            const idToDelete = data.id;
+            dataArray = dataArray.filter((item: any) => item.id !== idToDelete);
+          }
+          
+          if (mainKey) {
+             currentData[mainKey] = dataArray;
+          } else {
+             currentData.data = dataArray;
+          }
+          
+          // Write back to Firebase instantly
+          await fetch(`${FIREBASE_URL}${module}.json${authParam}`, {
+            method: 'PUT',
+            body: JSON.stringify(currentData)
+          });
+        }
+      } catch (e) {
+        console.warn('Optimistic Firebase update failed', e);
+      }
+    }
 
-    if (!response.ok) throw new Error('Network response was not ok');
+    // 2. BACKGROUND SYNC TO GOOGLE APPS SCRIPT
+    if (module === 'auth' || action === 'force_sync' || module === 'dashboard') {
+      // Must await for these because we need the real response
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Network response was not ok');
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+      return result as any;
+    } else {
+      // Fire and forget for data updates
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }).then(async (response) => {
+        if (!response.ok) throw new Error('GAS Network response was not ok');
+        const result = await response.json();
+        if (result.error) console.error("GAS Error:", result.error);
+      }).catch(err => {
+        console.error(`Error syncing data for module ${module}, action ${action}:`, err);
+      });
+      
+      // Return success immediately to UI
+      return { success: true, id: data.id || `temp_${Date.now()}` } as any;
+    }
     
-    const result = await response.json();
-    if (result.error) throw new Error(result.error);
-    
-    return result;
   } catch (error) {
-    console.error(`Error posting data for module ${module}, action ${action}:`, error);
+    console.error(`Error preparing data for module ${module}, action ${action}:`, error);
     throw error;
   }
 }
