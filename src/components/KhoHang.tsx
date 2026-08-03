@@ -115,6 +115,20 @@ export default function KhoHang() {
     }
   };
 
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${name}" không?`)) return;
+    setLoading(true);
+    try {
+      await postData('khohang', 'delete_product', { id });
+      alert("Xóa sản phẩm thành công!");
+      await loadData();
+    } catch (err: any) {
+      alert("Lỗi xóa sản phẩm: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredProducts = products.filter(p => {
     if (!filterSearch) return true;
     const lowerSearch = filterSearch.toLowerCase();
@@ -285,17 +299,27 @@ export default function KhoHang() {
                         {p.stock} {p.unit}
                       </td>
                       <td className="text-center">
-                        <button 
-                          className="btn-icon" 
-                          style={{color: 'var(--primary-color)'}} 
-                          onClick={() => {
-                            setEditingProduct({ ...p });
-                            setIsModalOpen(true);
-                          }} 
-                          title="Sửa Sản Phẩm"
-                        >
-                          <Edit size={16} />
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button 
+                            className="btn-icon" 
+                            style={{color: 'var(--primary-color)'}} 
+                            onClick={() => {
+                              setEditingProduct({ ...p });
+                              setIsModalOpen(true);
+                            }} 
+                            title="Sửa Sản Phẩm"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            className="btn-icon" 
+                            style={{color: 'var(--expense-color)'}} 
+                            onClick={() => handleDeleteProduct(p.id, p.name)}
+                            title="Xóa Sản Phẩm"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

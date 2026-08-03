@@ -1016,6 +1016,17 @@ function doPostInner(e, payload, ss) {
             d.code, d.name, d.unit, d.importPrice, d.price, d.stock
           ]]);
           logAudit(ss, user, "Cập nhật", "Kho Hàng", `Cập nhật Sản Phẩm: ${d.name}`);
+          triggerFirebaseSync(ss, ['khohang']);
+          return responseJson({ success: true });
+        }
+        return responseJson({ error: 'Không tìm thấy sản phẩm' }, 404);
+      } else if (action === 'delete_product') {
+        const sheetTK = ss.getSheetByName("Tồn Kho");
+        const match = getRowById(sheetTK, payload.id);
+        if (match) {
+          sheetTK.deleteRow(match.rowNum);
+          logAudit(ss, user, "Xóa", "Kho Hàng", `Xóa Sản Phẩm ID: ${payload.id}`);
+          triggerFirebaseSync(ss, ['khohang']);
           return responseJson({ success: true });
         }
         return responseJson({ error: 'Không tìm thấy sản phẩm' }, 404);

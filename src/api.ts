@@ -106,7 +106,7 @@ export async function postData(module: string, action: string, data: Record<stri
     };
 
     // 1. OPTIMISTIC FIREBASE UPDATE for instant UI feedback
-    if (module !== 'auth' && module !== 'dashboard' && (action === 'add' || action === 'update' || action === 'delete' || action === 'updateDueDate' || action === 'pay_debt')) {
+    if (module !== 'auth' && module !== 'dashboard' && (action === 'add' || action === 'update' || action === 'delete' || action === 'updateDueDate' || action === 'pay_debt' || action === 'delete_product')) {
       try {
         const firebaseSecret = localStorage.getItem('firebase_secret');
         const authParam = firebaseSecret ? `?auth=${firebaseSecret}` : '';
@@ -156,7 +156,7 @@ export async function postData(module: string, action: string, data: Record<stri
               const currentDebt = Number(dataArray[index].debt) || 0;
               dataArray[index].debt = Math.max(0, currentDebt - amount);
             }
-          } else if (action === 'delete') {
+          } else if (action === 'delete' || action === 'delete_product') {
             const idToDelete = data.id;
             dataArray = dataArray.filter((item: any) => item.id !== idToDelete);
           }
