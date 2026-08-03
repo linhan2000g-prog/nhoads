@@ -201,33 +201,18 @@ export async function postData(module: string, action: string, data: Record<stri
       }
     }
 
-    // 2. BACKGROUND SYNC TO GOOGLE APPS SCRIPT
-    if (module === 'auth' || action === 'force_sync' || module === 'dashboard') {
-      // Must await for these because we need the real response
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) throw new Error('Network response was not ok');
-      const result = await response.json();
-      if (result.error) throw new Error(result.error);
-      return result as any;
-    } else {
-      // Fire and forget for data updates
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }).then(async (response) => {
-        if (!response.ok) throw new Error('GAS Network response was not ok');
-        const result = await response.json();
-        if (result.error) console.error("GAS Error:", result.error);
-      }).catch(err => {
-        console.error(`Error syncing data for module ${module}, action ${action}:`, err);
-      });
-      
-      // Return success immediately to UI
-      return { success: true, id: data.id || `temp_${Date.now()}` } as any;
-    }
+    // 2. SYNC TO GOOGLE APPS SCRIPT
+    // We must await for the real response because GAS handles cross-module side-effects 
+    // (e.g. nhapkho updates khohang and congno). If we don't await, the UI will reload 
+    // old data from Firebase before GAS finishes syncing.
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error('Network response was not ok');
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+    return result as any;
     
   } catch (error) {
     console.error(`Error preparing data for module ${module}, action ${action}:`, error);
