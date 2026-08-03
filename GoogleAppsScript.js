@@ -368,6 +368,11 @@ function doPostInner(e, payload, ss) {
       }
       return responseJson({ success: false, error: 'Sai tài khoản hoặc mật khẩu' }, 401);
     }
+    
+    if (action === 'force_sync') {
+      initialFirebaseSync();
+      return responseJson({ success: true, message: 'Đã đồng bộ toàn bộ dữ liệu lên Firebase' });
+    }
 
     if (module === 'users') {
       let sheetTK = ss.getSheetByName("Tài Khoản");

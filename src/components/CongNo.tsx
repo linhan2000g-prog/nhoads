@@ -57,13 +57,11 @@ export default function CongNo() {
     setLoading(true);
     try {
       await postData('congno', 'pay_debt', {
-        data: {
-          id: payModal.data.id,
-          type: payModal.type,
-          amount: Number(payAmount),
-          note: payNote,
-          date: new Date().toISOString()
-        }
+        id: payModal.data.id,
+        type: payModal.type,
+        amount: Number(payAmount),
+        note: payNote,
+        date: new Date().toISOString()
       });
       setPayModal({ isOpen: false, data: null, type: 'thu' });
       await loadData();
@@ -80,10 +78,8 @@ export default function CongNo() {
     setLoading(true);
     try {
       await postData('congno', 'updateDueDate', {
-        data: {
-          id: editDateModal.data.id,
-          newDueDate: editDateModal.newDate
-        }
+        id: editDateModal.data.id,
+        newDueDate: editDateModal.newDate
       });
       setEditDateModal({ isOpen: false, data: null, newDate: '' });
       await loadData();

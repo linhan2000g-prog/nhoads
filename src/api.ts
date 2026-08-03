@@ -13,6 +13,10 @@ export async function fetchData(module: string, params: Record<string, string | 
           const fbData = await fbRes.json();
           
           if (fbData === null) {
+            // users module does not sync automatically, so if it's null, we MUST fall back to GAS
+            if (module === 'users') {
+              throw new Error("Users module not in Firebase, fallback to GAS");
+            }
             return { data: [] };
           }
           
@@ -25,10 +29,10 @@ export async function fetchData(module: string, params: Record<string, string | 
           } else if (Array.isArray(fbData)) {
             returnData = { data: fbData };
           } else if (fbData.error) {
-            // Ignore error payload accidentally synced
+            if (module === 'users') throw new Error("Users module has error, fallback to GAS");
             return { data: [] };
           } else {
-            // Empty object or other format
+            if (module === 'users') throw new Error("Users module missing, fallback to GAS");
             return { data: [] };
           }
 
@@ -137,6 +141,20 @@ export async function postData(module: string, action: string, data: Record<stri
             const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
             if (index !== -1) {
               dataArray[index] = { ...dataArray[index], ...itemData };
+            }
+          } else if (action === 'updateDueDate') {
+            const idToUpdate = data.id;
+            const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
+            if (index !== -1) {
+              dataArray[index].dueDate = data.newDueDate;
+            }
+          } else if (action === 'pay_debt') {
+            const idToUpdate = data.id;
+            const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
+            if (index !== -1) {
+              const amount = Number(data.amount) || 0;
+              const currentDebt = Number(dataArray[index].debt) || 0;
+              dataArray[index].debt = Math.max(0, currentDebt - amount);
             }
           } else if (action === 'delete') {
             const idToDelete = data.id;
