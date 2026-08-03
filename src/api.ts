@@ -74,7 +74,10 @@ export async function fetchData(module: string, params: Record<string, string | 
     });
 
     const response = await fetch(url.toString());
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) {
+      const text = await response.text().catch(() => 'no text');
+      throw new Error(`Network response was not ok (GET ${module}): ${response.status} ${response.statusText} - ${text.substring(0, 100)}`);
+    }
     
     const data = await response.json();
     if (data.error) throw new Error(data.error);
@@ -209,7 +212,10 @@ export async function postData(module: string, action: string, data: Record<stri
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) {
+      const text = await response.text().catch(() => 'no text');
+      throw new Error(`Network response was not ok (POST ${module}): ${response.status} ${response.statusText} - ${text.substring(0, 100)}`);
+    }
     const result = await response.json();
     if (result.error) throw new Error(result.error);
     return result as any;
