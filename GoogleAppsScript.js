@@ -1325,7 +1325,7 @@ function triggerFirebaseSync(ss, modules) {
 
       if (Object.keys(result).length > 0) {
         requests.push({
-          url: FIREBASE_URL + module + '.json',
+          url: FIREBASE_URL + module + '.json?auth=' + FIREBASE_SECRET,
           method: 'put',
           contentType: 'application/json',
           payload: JSON.stringify(result)
