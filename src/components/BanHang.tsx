@@ -167,7 +167,7 @@ export default function BanHang() {
       alert(editingId ? "Cập nhật thành công!" : "Tạo phiếu bán hàng thành công!");
     } catch (error) {
       console.error("Lỗi thêm dữ liệu", error);
-      alert("Có lỗi khi tạo phiếu bán hàng.");
+      alert("Có lỗi khi tạo phiếu bán hàng. Chi tiết: " + (error instanceof Error ? error.message : JSON.stringify(error)));
     } finally {
       setLoading(false);
     }

@@ -113,7 +113,7 @@ export default function ThuChi() {
       alert(editingId ? "Cập nhật thành công!" : "Thêm mới thành công!");
     } catch (error) {
       console.error("Lỗi thêm/sửa dữ liệu", error);
-      alert("Có lỗi khi thêm/sửa dữ liệu. Vui lòng thử lại.");
+      alert("Có lỗi khi thêm/sửa dữ liệu. Chi tiết: " + (error instanceof Error ? error.message : JSON.stringify(error)));
     } finally {
       setLoading(false);
     }
