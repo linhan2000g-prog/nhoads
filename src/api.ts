@@ -204,21 +204,18 @@ export async function postData(module: string, action: string, data: Record<stri
       }
     }
 
-    // 2. SYNC TO GOOGLE APPS SCRIPT
-    // We must await for the real response because GAS handles cross-module side-effects 
-    // (e.g. nhapkho updates khohang and congno). If we don't await, the UI will reload 
-    // old data from Firebase before GAS finishes syncing.
-    const response = await fetch(SCRIPT_URL, {
+    // 2. SYNC TO GOOGLE APPS SCRIPT (Fire and Forget)
+    fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const text = await response.text().catch(() => 'no text');
-      throw new Error(`Network response was not ok (POST ${module}): ${response.status} ${response.statusText} - ${text.substring(0, 100)}`);
-    }
-    const result = await response.json();
-    if (result.error) throw new Error(result.error);
-    return result as any;
+    }).then(res => {
+      if (!res.ok) {
+        res.text().then(text => console.error(`GAS POST Error: ${res.status} ${text}`));
+      }
+    }).catch(console.error);
+    
+    // Return immediately for fast UI
+    return { success: true, id: tempId || `temp_${Date.now()}` } as any;
     
   } catch (error) {
     console.error(`Error preparing data for module ${module}, action ${action}:`, error);
