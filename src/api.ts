@@ -215,7 +215,7 @@ export async function postData(module: string, action: string, data: Record<stri
     }).catch(console.error);
     
     // Return immediately for fast UI
-    return { success: true, id: tempId || `temp_${Date.now()}` } as any;
+    return { success: true, id: (data as any).id || `temp_${Date.now()}` } as any;
     
   } catch (error) {
     console.error(`Error preparing data for module ${module}, action ${action}:`, error);
