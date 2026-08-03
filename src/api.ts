@@ -204,18 +204,34 @@ export async function postData(module: string, action: string, data: Record<stri
       }
     }
 
-    // 2. SYNC TO GOOGLE APPS SCRIPT (Fire and Forget)
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }).then(res => {
-      if (!res.ok) {
-        res.text().then(text => console.error(`GAS POST Error: ${res.status} ${text}`));
+    // 2. SYNC TO GOOGLE APPS SCRIPT
+    if (module === 'auth' || action === 'force_sync') {
+      // Must await for these actions to get real response (e.g. user details)
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const text = await response.text().catch(() => 'no text');
+        throw new Error(`Network response was not ok (POST ${module}): ${response.status} ${response.statusText} - ${text.substring(0, 100)}`);
       }
-    }).catch(console.error);
-    
-    // Return immediately for fast UI
-    return { success: true, id: (data as any).id || `temp_${Date.now()}` } as any;
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+      return result as any;
+    } else {
+      // Fire and Forget for fast UI
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }).then(res => {
+        if (!res.ok) {
+          res.text().then(text => console.error(`GAS POST Error: ${res.status} ${text}`));
+        }
+      }).catch(console.error);
+      
+      // Return immediately for fast UI
+      return { success: true, id: (data as any).id || `temp_${Date.now()}` } as any;
+    }
     
   } catch (error) {
     console.error(`Error preparing data for module ${module}, action ${action}:`, error);
