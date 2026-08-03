@@ -158,7 +158,12 @@ export async function postData(module: string, action: string, data: Record<stri
               if (index !== -1) {
                 const amount = Number(data.amount) || 0;
                 const currentDebt = Number(targetArray[index].debt) || 0;
-                targetArray[index].debt = Math.max(0, currentDebt - amount);
+                const newDebt = Math.max(0, currentDebt - amount);
+                if (newDebt <= 0) {
+                  targetArray.splice(index, 1);
+                } else {
+                  targetArray[index].debt = newDebt;
+                }
                 currentData[arrayKey] = targetArray;
               }
             } else {
@@ -166,7 +171,12 @@ export async function postData(module: string, action: string, data: Record<stri
               if (index !== -1) {
                 const amount = Number(data.amount) || 0;
                 const currentDebt = Number(dataArray[index].debt) || 0;
-                dataArray[index].debt = Math.max(0, currentDebt - amount);
+                const newDebt = Math.max(0, currentDebt - amount);
+                if (newDebt <= 0) {
+                  dataArray.splice(index, 1);
+                } else {
+                  dataArray[index].debt = newDebt;
+                }
               }
             }
           } else if (action === 'delete' || action === 'delete_product') {
