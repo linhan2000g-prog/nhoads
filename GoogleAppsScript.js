@@ -683,6 +683,7 @@ function doPostInner(e, payload, ss) {
           recordThuChi(ss, 'thu', d.date, d.paidAmount, 'Thanh toán đơn hàng cho KH: ' + d.customerName, d.customerName, user);
         }
         
+        triggerFirebaseSync(ss, ['banhang', 'khohang', 'congno', 'thuchi']);
         return responseJson({ success: true, id: newId });
       }
       else if (action === 'delete') {
@@ -722,7 +723,9 @@ function doPostInner(e, payload, ss) {
           } catch(e) {}
           // ----------------------------------------
           
-          return deleteRowById(sheetBanHang, payload.id);
+          const result = deleteRowById(sheetBanHang, payload.id);
+          triggerFirebaseSync(ss, ['banhang', 'khohang', 'congno', 'thuchi']);
+          return result;
         }
         return responseJson({ error: 'Không tìm thấy phiếu' }, 404);
       }
@@ -801,6 +804,7 @@ function doPostInner(e, payload, ss) {
           } catch(e) {}
           // ----------------------------------------
 
+          triggerFirebaseSync(ss, ['banhang', 'khohang', 'congno', 'thuchi']);
           return responseJson({ success: true });
         }
         return responseJson({ error: 'Không tìm thấy phiếu' }, 404);
@@ -861,6 +865,7 @@ function doPostInner(e, payload, ss) {
           recordThuChi(ss, 'chi', d.date, d.paidAmount, 'Thanh toán nhập kho cho NCC: ' + d.supplier, d.supplier, user);
         }
         
+        triggerFirebaseSync(ss, ['nhapkho', 'khohang', 'congno', 'thuchi']);
         return responseJson({ success: true, id: newId });
       }
       else if (action === 'delete') {
@@ -898,7 +903,9 @@ function doPostInner(e, payload, ss) {
             } catch(e) {}
             // ----------------------------------------
             
-            return deleteRowById(sheetNK, payload.id);
+            const result = deleteRowById(sheetNK, payload.id);
+            triggerFirebaseSync(ss, ['nhapkho', 'khohang', 'congno', 'thuchi']);
+            return result;
          }
          return responseJson({ error: 'Không tìm thấy phiếu' }, 404);
       }
@@ -1001,6 +1008,8 @@ function doPostInner(e, payload, ss) {
           recordThuChi(ss, 'chi', d.date, d.amount, `Trả nợ NCC: ${pName} - ${d.note}`, pName, user);
           logAudit(ss, user, "Trả Nợ", "Công Nợ", `Trả nợ NCC ${pName}: ${d.amount}`);
         }
+        
+        triggerFirebaseSync(ss, ['congno', 'thuchi', 'banhang', 'nhapkho']);
         return responseJson({ success: true });
       }
     }
