@@ -57,14 +57,17 @@ export default function CongNo() {
     setLoading(true);
     try {
       await postData('congno', 'pay_debt', {
-        id: payModal.data.id,
-        type: payModal.type,
-        amount: Number(payAmount),
-        note: payNote,
-        date: new Date().toISOString()
+        data: {
+          id: payModal.data.id,
+          type: payModal.type,
+          amount: Number(payAmount),
+          note: payNote,
+          date: new Date().toISOString()
+        }
       });
+      alert("Thanh toán thành công!");
       setPayModal({ isOpen: false, data: null, type: 'thu' });
-      await loadData();
+      setPayAmount(''); loadData();
     } catch (err) {
       console.error(err);
       alert("Lỗi khi thanh toán!");
@@ -78,8 +81,10 @@ export default function CongNo() {
     setLoading(true);
     try {
       await postData('congno', 'updateDueDate', {
-        id: editDateModal.data.id,
-        newDueDate: editDateModal.newDate
+        data: {
+          id: editDateModal.data.id,
+          newDueDate: editDateModal.newDate
+        }
       });
       setEditDateModal({ isOpen: false, data: null, newDate: '' });
       await loadData();

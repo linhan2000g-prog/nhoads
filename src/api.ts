@@ -143,20 +143,21 @@ export async function postData(module: string, action: string, data: Record<stri
               dataArray[index] = { ...dataArray[index], ...itemData };
             }
           } else if (action === 'updateDueDate') {
-            const idToUpdate = data.id;
+            const idToUpdate = data.id || itemData.id;
             const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
             if (index !== -1) {
-              dataArray[index].dueDate = data.newDueDate;
+              dataArray[index].dueDate = data.newDueDate || itemData.newDueDate;
             }
           } else if (action === 'pay_debt') {
-            const idToUpdate = data.id;
+            const idToUpdate = data.id || itemData.id;
+            const type = data.type || itemData.type;
+            const amount = Number(data.amount || itemData.amount) || 0;
             // For congno, handle both phaithu and phaitra
             if (module === 'congno') {
-              const arrayKey = data.type === 'tra' ? 'phaitra' : 'phaithu';
+              const arrayKey = type === 'tra' ? 'phaitra' : 'phaithu';
               const targetArray = currentData[arrayKey] || [];
               const index = targetArray.findIndex((item: any) => item.id === idToUpdate);
               if (index !== -1) {
-                const amount = Number(data.amount) || 0;
                 const currentDebt = Number(targetArray[index].debt) || 0;
                 const newDebt = Math.max(0, currentDebt - amount);
                 if (newDebt <= 0) {
@@ -169,7 +170,6 @@ export async function postData(module: string, action: string, data: Record<stri
             } else {
               const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
               if (index !== -1) {
-                const amount = Number(data.amount) || 0;
                 const currentDebt = Number(dataArray[index].debt) || 0;
                 const newDebt = Math.max(0, currentDebt - amount);
                 if (newDebt <= 0) {
