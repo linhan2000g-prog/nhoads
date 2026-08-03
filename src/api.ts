@@ -150,11 +150,24 @@ export async function postData(module: string, action: string, data: Record<stri
             }
           } else if (action === 'pay_debt') {
             const idToUpdate = data.id;
-            const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
-            if (index !== -1) {
-              const amount = Number(data.amount) || 0;
-              const currentDebt = Number(dataArray[index].debt) || 0;
-              dataArray[index].debt = Math.max(0, currentDebt - amount);
+            // For congno, handle both phaithu and phaitra
+            if (module === 'congno') {
+              const arrayKey = data.type === 'tra' ? 'phaitra' : 'phaithu';
+              const targetArray = currentData[arrayKey] || [];
+              const index = targetArray.findIndex((item: any) => item.id === idToUpdate);
+              if (index !== -1) {
+                const amount = Number(data.amount) || 0;
+                const currentDebt = Number(targetArray[index].debt) || 0;
+                targetArray[index].debt = Math.max(0, currentDebt - amount);
+                currentData[arrayKey] = targetArray;
+              }
+            } else {
+              const index = dataArray.findIndex((item: any) => item.id === idToUpdate);
+              if (index !== -1) {
+                const amount = Number(data.amount) || 0;
+                const currentDebt = Number(dataArray[index].debt) || 0;
+                dataArray[index].debt = Math.max(0, currentDebt - amount);
+              }
             }
           } else if (action === 'delete' || action === 'delete_product') {
             const idToDelete = data.id;
