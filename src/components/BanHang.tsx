@@ -143,12 +143,13 @@ export default function BanHang() {
       return;
     }
 
+    const totalAmount = items.reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0);
+    const debt = Math.max(0, totalAmount - (Number(paidAmount) || 0));
+
     const payload = {
-      date,
-      phone,
-      customerName,
-      items,
+      date, phone, customerName, items,
       paidAmount: Number(paidAmount) || 0,
+      totalAmount, debt,
       note,
       dueDate: currentDebt > 0 ? dueDate : ''
     };
